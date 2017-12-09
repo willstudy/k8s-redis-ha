@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-sentinel
+  labels:
+    name: redis-sentinel
+spec:
+  ports:
+    - port: 26379
+      targetPort: 26379
+  selector:
+    redis-sentinel: "true"
+---
+apiVersion: apps/v1beta1
+kind: Deployment 
+metadata:
+  name: redis-sentinel
+spec:
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        redis-sentinel: "true"
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: redis-sentinel
+        image: index-dev.qiniu.io/kelibrar/redis:3.2.8
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 26379
+          name: redis-sentinel
+        env:
+          - name: SENTINEL
+            value: "true"
+          - name: REDIS_PASS
+            valueFrom:
+              secretKeyRef:
+                name: redis-secret
+                key: requirepass
+      imagePullSecrets: 
+        - name: registry-secret

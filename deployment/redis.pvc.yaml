@@ -1,0 +1,10 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: redis-volume
+spec:
+  accessModes: [ "ReadWriteOnce" ]
+  storageClassName: ceph
+  resources:
+    requests:
+      storage: 10Gi
