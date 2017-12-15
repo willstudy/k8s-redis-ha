@@ -1,29 +1,43 @@
+#apiVersion: v1
+#kind: Service
+#metadata:
+#  name: redis
+#  labels:
+#    app: redis
+#spec:
+#  ports:
+#    - port: 6379
+#  clusterIP: None
+#  selector:
+#    app: redis
+#---
 apiVersion: apps/v1beta1
 kind: StatefulSet
 metadata:
-  name: redis-master
+  name: redis-slave
   labels:
-    name: redis-master
+    name: redis-slave
   namespace: redis
 spec:
-  serviceName: redis-master
-  replicas: 1
+  serviceName: redis-slave
+  replicas: 1 
   template:
     metadata:
       labels:
-        app: redis-master
-        redis-master: "true"
+        name: redis-slave
     spec:
       terminationGracePeriodSeconds: 10
+      initContainers:
+      - name: init-slave
+        image: busybox
+        command: ['sh', '-c', 'until nslookup redis-sentinel; do echo waiting for sentinel; sleep 2; done;']
       containers:
-      - name: redis-master
+      - name: redis-slave
         image: index-dev.qiniu.io/kelibrar/redis:4.0.6
         imagePullPolicy: Always
         ports:
         - containerPort: 6379
         env:
-        - name: MASTER
-          value: "true"
         - name: REDIS_APP_NAME
           value: "REDIS"
         - name: POD_IP
@@ -35,45 +49,23 @@ spec:
             secretKeyRef:
               name: redis-secret
               key: requirepass
-        #resources:
-        #  requests:
-        #    memory: "256Mi"
-        #    cpu: "250m"
-        #  limits:
-        #    memory: "512Mi"
-        #    cpu: "500m"
         volumeMounts:
-        - name: redis-master-volume
+        - name: redis-volume
           mountPath: /redis-master-data
-        volumeMounts:
         - name: redis-config
           mountPath: /etc/redis/
-      imagePullSecrets:
-        - name: registry-secret 
+      imagePullSecrets: 
+        - name: registry-secret
       volumes:
         - name: redis-config
           configMap:
             name: redis-config
   volumeClaimTemplates:
   - metadata:
-      name: redis-master-volume
+      name: redis-volume
     spec:
       accessModes: [ "ReadWriteOnce" ]
       storageClassName: ceph
       resources:
         requests:
           storage: 10Gi
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: redis-master
-  labels:
-    name: redis-master
-  namespace: redis
-spec:
-  ports:
-    - port: 6379
-  selector:
-    redis-master: "true"
-   

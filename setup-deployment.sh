@@ -7,6 +7,9 @@ work_dir=`pwd`
 kubectl create -f redis-secret.yaml 
 # create docker registry secret
 kubectl create secret docker-registry myregistrykey --docker-server=DOCKER_REGISTRY_SERVER --docker-username=DOCKER_USER --docker-password=DOCKER_PASSWORD --docker-email=DOCKER_EMAIL
+# create pvc for redis-master and redis-slave
+kubectl create -f redis-master.pvc.yaml
+kubectl create -f redis-slave.pvc.yaml
 # generate redis images
 cd ${work_dir}/redis
 make
